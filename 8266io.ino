@@ -1,8 +1,8 @@
-//ESP-8266 Firmware for Adafruit IO
-//This firmware allows the user to configure the WiFi information, Adafruit IO
-//credentials, and publish data to feeds using serial commands
+// ESP-8266 Firmware for Adafruit IO
+// This firmware allows the user to configure the WiFi information, Adafruit IO
+// credentials, and publish data to feeds using serial commands
 //
-//Written by Theo Fleck
+// Written by Theo Fleck
 
 /************************** Configuration ***********************************/
 
@@ -10,7 +10,7 @@
 
 /************************ Firmware Starts Here *******************************/
 
-// this int will hold the current count for our sketch
+// Define configuration parameter defaults
 String IO_USERNAME = "";
 String IO_KEY = "";
 String WIFI_SSID = "";
@@ -18,7 +18,7 @@ String WIFI_PASS = "";
 int count = 0;
 bool isSetup = false;
 
-// set up the 'counter' feed
+// Define all 10 usable feeds
 AdafruitIO_WiFi *io;
 AdafruitIO_Feed *feed1;
 AdafruitIO_Feed *feed2;
@@ -32,17 +32,22 @@ AdafruitIO_Feed *feed9;
 AdafruitIO_Feed *feed10;
 
 void setup() {
-  // start the serial connection
+  // Start the serial connection
   Serial.begin(9600);
 }
 
 void loop() {
+  // Keep IO connection running
   if(isSetup){
     io->run();
   }
   if(Serial.available()){
+    // If a serial command was received, process it
     String str = Serial.readString();
-    if(str.indexOf("wifi_ssid=") >= 0){
+    if(str.indexOf("get_macaddr") >= 0){
+      Serial.println(WiFi.macAddress());
+    }
+    else if(str.indexOf("wifi_ssid=") >= 0){
       int ind = str.indexOf("wifi_ssid=")+10;
       WIFI_SSID = str.substring(ind);
       WIFI_SSID.trim();
@@ -66,8 +71,9 @@ void loop() {
       IO_KEY.trim();
       Serial.println("IO Key changed to: "+IO_KEY);
     }
-    else if(str.indexOf("get_macaddr") >= 0){
-      Serial.println(WiFi.macAddress());
+    else if(str.indexOf("setup_io") >= 0){
+      Serial.println("Setting up IO");
+      setupIO();
     }
     else if(str.indexOf("setup_feed=") >= 0){
       int ind = str.indexOf("setup_feed=")+11;
@@ -76,10 +82,6 @@ void loop() {
       String feedName = str.substring(ind2+1);
       Serial.println("Setting up feed "+feedIndex);
       setupFeed(feedIndex.toInt(),feedName);
-    }
-    else if(str.indexOf("setup_io") >= 0){
-      Serial.println("Setting up IO");
-      setupIO();
     }
     else if(str.indexOf("send_data=") >= 0){
       int ind = str.indexOf("send_data=")+10;
@@ -93,15 +95,12 @@ void loop() {
 }
 
 void sendNum(int feed_index, int data){
-    // save count to the 'counter' feed on Adafruit IO
-    Serial.print("sending -> ");
-    Serial.println(data);
+    // save data to feed specified by provided index
     AdafruitIO_Feed** feed = getFeed(feed_index);
     (*feed)->save(data);
 }
 
 void setupIO(){
-  Serial.print("Connecting to Adafruit IO");
   io = new AdafruitIO_WiFi(IO_USERNAME.c_str(), IO_KEY.c_str(), WIFI_SSID.c_str(), WIFI_PASS.c_str());
 
   // connect to io.adafruit.com
@@ -120,6 +119,7 @@ void setupIO(){
 }
 
 AdafruitIO_Feed** getFeed(int feed_index){
+  // translate index number into IO feed object, return NULL if invalid
   if(feed_index == 1){
     return &feed1;
   }
