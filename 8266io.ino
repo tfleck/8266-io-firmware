@@ -88,8 +88,13 @@ void loop() {
       int ind2 = str.indexOf(",",ind);
       String feedIndex = str.substring(ind,ind2);
       String data = str.substring(ind2+1);
-      Serial.println("Sending "+data);
+      Serial.println("Sending:"+data);
       sendNum(feedIndex.toInt(),data.toInt());
+    }
+    else if(str.indexOf("get_data=") >= 0){
+      int ind = str.indexOf("get_data=")+9;
+      String feedIndex = str.substring(ind);
+      getNum(feedIndex.toInt());
     }
   }
 }
@@ -98,6 +103,16 @@ void sendNum(int feed_index, int data){
     // save data to feed specified by provided index
     AdafruitIO_Feed** feed = getFeed(feed_index);
     (*feed)->save(data);
+}
+
+void getNum(int feed_index){
+  //query integer data from feed specified by index
+  AdafruitIO_Feed** feed = getFeed(feed_index);
+  AdafruitIO_Data *data = (*feed)->lastValue();
+  if(data != NULL){
+    Serial.print("Received:");
+    Serial.println(data->toInt());
+  }
 }
 
 void setupIO(){
