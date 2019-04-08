@@ -15,7 +15,6 @@ String IO_USERNAME = "";
 String IO_KEY = "";
 String WIFI_SSID = "";
 String WIFI_PASS = "";
-int count = 0;
 bool isSetup = false;
 
 // Define all 10 usable feeds
@@ -79,7 +78,9 @@ void loop() {
       int ind = str.indexOf("setup_feed=")+11;
       int ind2 = str.indexOf(",",ind);
       String feedIndex = str.substring(ind,ind2);
+      feedIndex.trim();
       String feedName = str.substring(ind2+1);
+      feedName.trim();
       Serial.println("Setting up feed "+feedIndex);
       setupFeed(feedIndex.toInt(),feedName);
     }
@@ -87,31 +88,63 @@ void loop() {
       int ind = str.indexOf("send_data=")+10;
       int ind2 = str.indexOf(",",ind);
       String feedIndex = str.substring(ind,ind2);
+      feedIndex.trim();
       String data = str.substring(ind2+1);
+      data.trim();
       Serial.println("Sending:"+data);
       sendNum(feedIndex.toInt(),data.toInt());
     }
     else if(str.indexOf("get_data=") >= 0){
       int ind = str.indexOf("get_data=")+9;
       String feedIndex = str.substring(ind);
-      getNum(feedIndex.toInt());
+      feedIndex.trim();
+      getData(feedIndex.toInt());
+    }
+    else if(str.indexOf("get_name=") >= 0){
+      int ind = str.indexOf("get_name=")+9;
+      String feedIndex = str.substring(ind);
+      feedIndex.trim();
+      getName(feedIndex.toInt());
     }
   }
 }
 
 void sendNum(int feed_index, int data){
-    // save data to feed specified by provided index
-    AdafruitIO_Feed** feed = getFeed(feed_index);
+  // save data to feed specified by provided index
+  AdafruitIO_Feed** feed = getFeed(feed_index);
+  if(feed){
     (*feed)->save(data);
+  }
+  else{
+    Serial.println("Error: Feed Not Found");
+  }
 }
 
-void getNum(int feed_index){
-  //query integer data from feed specified by index
+void getData(int feed_index){
+  // query data from feed specified by index
   AdafruitIO_Feed** feed = getFeed(feed_index);
-  AdafruitIO_Data *data = (*feed)->lastValue();
-  if(data != NULL){
-    Serial.print("Received:");
-    Serial.println(data->toInt());
+  if(feed){
+    AdafruitIO_Data *data = (*feed)->lastValue();
+    if(data != NULL){
+      Serial.println(data->toString());
+    }
+    else{
+      Serial.println("Error: Data Was Null");
+    }
+  }
+  else{
+    Serial.println("Error: Feed Not Found");
+  }
+}
+
+void getName(int feed_index){
+  // query name from feed specified by index
+  AdafruitIO_Feed** feed = getFeed(feed_index);
+  if(feed){
+    Serial.println((*feed)->name);
+  }
+  else{
+    Serial.println("Error: Feed Not Found");
   }
 }
 
@@ -170,7 +203,10 @@ AdafruitIO_Feed** getFeed(int feed_index){
 
 void setupFeed(int feed_index, String feed_name){
   AdafruitIO_Feed** feed = getFeed(feed_index);
+  //make copy of name on heap, so the pointer in the feed doesn't get deallocated
+  char* f_name = (char*)calloc(feed_name.length()+1,sizeof(char));
+  strncpy(f_name,feed_name.c_str(),feed_name.length());
   if(feed){
-    *feed = io->feed(feed_name.c_str());
+    *feed = io->feed(f_name);
   }
 }
