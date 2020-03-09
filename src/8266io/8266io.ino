@@ -46,6 +46,9 @@ void loop() {
     if(str.indexOf("get_macaddr") >= 0){
       Serial.println(WiFi.macAddress());
     }
+    else if(str.indexOf("get_version") >= 0){
+      Serial.println("v0.2");
+    }
     else if(str.indexOf("wifi_ssid=") >= 0){
       int ind = str.indexOf("wifi_ssid=")+10;
       WIFI_SSID = str.substring(ind);
@@ -81,7 +84,6 @@ void loop() {
       feedIndex.trim();
       String feedName = str.substring(ind2+1);
       feedName.trim();
-      Serial.println("Setting up feed "+feedIndex);
       setupFeed(feedIndex.toInt(),feedName);
     }
     else if(str.indexOf("send_data=") >= 0){
@@ -208,5 +210,9 @@ void setupFeed(int feed_index, String feed_name){
   strncpy(f_name,feed_name.c_str(),feed_name.length());
   if(feed){
     *feed = io->feed(f_name);
+    Serial.println("Feed "+String(feed_index)+" setup");
+  }
+  else{
+    Serial.println("Error setting up feed "+String(feed_index)); 
   }
 }
