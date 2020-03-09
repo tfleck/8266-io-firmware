@@ -213,6 +213,6 @@ void setupFeed(int feed_index, String feed_name){
     Serial.println("Feed "+String(feed_index)+" setup");
   }
   else{
-    Serial.println("Error setting up feed "+String(feed_index)); 
+    Serial.println("Error: Failed to setup feed "+String(feed_index)); 
   }
 }
