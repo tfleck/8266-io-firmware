@@ -93,7 +93,6 @@ void loop() {
       feedIndex.trim();
       String data = str.substring(ind2+1);
       data.trim();
-      Serial.println("Sending:"+data);
       sendNum(feedIndex.toInt(),data.toInt());
     }
     else if(str.indexOf("get_data=") >= 0){
@@ -116,6 +115,7 @@ void sendNum(int feed_index, int data){
   AdafruitIO_Feed** feed = getFeed(feed_index);
   if(feed){
     (*feed)->save(data);
+    Serial.println("Sent: "+data);
   }
   else{
     Serial.println("Error: Feed Not Found");
